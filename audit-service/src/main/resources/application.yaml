@@ -1,0 +1,25 @@
+server:
+    port: 8086
+
+spring:
+    application:
+        name: audit-service
+    config:
+        import: optional:configserver:http://localhost:8888
+    cloud:
+        config:
+            fail-fast: false
+
+
+
+
+
+
+
+swagger:
+    title: "Audit Service"
+    version: "1.0"
+    description: "Audit Endpoints"
+    package: auditservice
+    gateway-url: http://localhost:8080
+

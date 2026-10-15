@@ -1,0 +1,16 @@
+# Docker-profile override — replaces localhost URIs with Docker service names
+spring:
+    config:
+        import: "optional:configserver:http://config-server:8888"
+    data:
+        mongodb:
+            uri: mongodb://bizledger-mongodb:27017/audit_db
+    kafka:
+        bootstrap-servers: bizledger-kafka:19092
+    elasticsearch:
+        uris: http://bizledger-elasticsearch:9200
+
+eureka:
+    client:
+        service-url:
+            defaultZone: http://bizledger-service-registry:8761/eureka/

@@ -1,0 +1,19 @@
+server:
+    port: 8085
+
+spring:
+    application:
+        name: payment-service
+    config:
+        import: "optional:configserver:http://localhost:8888"
+    cloud:
+        config:
+            fail-fast: false
+
+
+swagger:
+    title: "Payment Service"
+    version: "1.0"
+    description: "Payment Endpoints"
+    package: paymentservice
+    gateway-url: http://localhost:8080

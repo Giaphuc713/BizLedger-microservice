@@ -1,0 +1,17 @@
+server:
+    port: 8084
+spring:
+    application:
+        name: order-service
+    config:
+        import: "optional:configserver:http://localhost:8888"
+    cloud:
+        config:
+            fail-fast: false
+
+swagger:
+    title: "Order Service"
+    version: "1.0"
+    description: "Order Endpoints"
+    package: orderservice
+    gateway-url: http://localhost:8080

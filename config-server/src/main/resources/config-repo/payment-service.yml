@@ -1,0 +1,26 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://localhost:5432/payment_db
+        username: bizledger
+        password: bizledger_password
+        hikari:
+            connection-timeout: 30000
+            maximum-pool-size: 10
+            pool-name: PaymentHikariPool
+    jpa:
+        hibernate:
+            ddl-auto: validate
+        show-sql: false
+    flyway:
+        enabled: true
+        baseline-on-migrate: true
+    kafka:
+        bootstrap-servers: localhost:9092
+        consumer:
+            group-id: payment-group
+            auto-offset-reset: earliest
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.apache.kafka.common.serialization.StringSerializer

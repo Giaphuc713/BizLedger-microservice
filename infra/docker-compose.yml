@@ -1,0 +1,461 @@
+services:
+    postgres:
+        image: postgres:15
+        container_name: bizledger-postgres
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: ${POSTGRES_DB}
+            TZ: Asia/Ho_Chi_Minh
+        ports:
+            - "${POSTGRES_PORT}:5432"
+        volumes:
+            - bizledger_postgres_data:/var/lib/postgresql/data
+            - ./postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres"]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+        networks:
+            - bizledger-net
+    mongodb:
+        image: mongo:6.0
+        container_name: bizledger-mongodb
+        restart: unless-stopped
+        ports:
+            - "27017:27017"
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
+            MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+        volumes:
+            - bizledger_mongodb_data:/data/db
+        networks:
+            - bizledger-net
+
+    redis:
+        image: redis:7.2-alpine
+        container_name: bizledger-redis
+        restart: unless-stopped
+        command: ["redis-server", "--appendonly", "yes"]
+        ports:
+            - "${REDIS_PORT}:6379"
+        volumes:
+            - bizledger_redis_data:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+        networks:
+            - bizledger-net
+
+    kafka:
+        image: apache/kafka:3.7.2
+        container_name: bizledger-kafka
+        hostname: bizledger-kafka
+        restart: unless-stopped
+        ports:
+            - "${KAFKA_EXTERNAL_PORT}:9092"
+        environment:
+            # ===============================
+            # Kafka KRaft mode - no ZooKeeper
+            # ===============================
+            KAFKA_NODE_ID: 1
+            KAFKA_PROCESS_ROLES: broker,controller
+            KAFKA_CONTROLLER_QUORUM_VOTERS: 1@bizledger-kafka:29093
+
+            # ===============================
+            # Listeners
+            # - PLAINTEXT: for containers inside Docker network
+            # - PLAINTEXT_HOST: for apps running on host machine
+            # - CONTROLLER: for KRaft controller
+            # ===============================
+            KAFKA_LISTENERS: PLAINTEXT://:19092,PLAINTEXT_HOST://:9092,CONTROLLER://:29093
+            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://bizledger-kafka:19092,PLAINTEXT_HOST://localhost:${KAFKA_EXTERNAL_PORT}
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+            KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+            KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+            # ===============================
+            # Single-node local dev configs
+            # ===============================
+            CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+            KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+            KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+            KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+            KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+        volumes:
+            - bizledger_kafka_data:/tmp/kraft-combined-logs
+        healthcheck:
+            test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:19092 --list >/dev/null 2>&1"]
+            interval: 10s
+            timeout: 10s
+            retries: 15
+        networks:
+            - bizledger-net
+
+    kafka-ui:
+        image: provectuslabs/kafka-ui:latest
+        container_name: bizledger-kafka-ui
+        restart: unless-stopped
+        depends_on:
+            kafka:
+                condition: service_healthy
+        ports:
+            - "${KAFKA_UI_PORT}:8080"
+        environment:
+            KAFKA_CLUSTERS_0_NAME: bizledger-local
+            KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: bizledger-kafka:19092
+        networks:
+            - bizledger-net
+
+    kafka-topic-init:
+        image: apache/kafka:3.7.2
+        container_name: bizledger-kafka-topic-init
+        depends_on:
+            kafka:
+                condition: service_healthy
+        command: >
+            sh -c "
+            echo 'Waiting for Kafka...' &&
+            
+            /opt/kafka/bin/kafka-topics.sh --bootstrap-server bizledger-kafka:19092 --list >/dev/null 2>&1 &&
+            
+            echo 'Creating Kafka topics...' &&
+            
+            /opt/kafka/bin/kafka-topics.sh --bootstrap-server bizledger-kafka:19092 --create --if-not-exists --topic identity.events --partitions 1 --replication-factor 1 &&
+            /opt/kafka/bin/kafka-topics.sh --bootstrap-server bizledger-kafka:19092 --create --if-not-exists --topic catalog.events --partitions 1 --replication-factor 1 &&
+            /opt/kafka/bin/kafka-topics.sh --bootstrap-server bizledger-kafka:19092 --create --if-not-exists --topic inventory.events --partitions 1 --replication-factor 1 &&
+            /opt/kafka/bin/kafka-topics.sh --bootstrap-server bizledger-kafka:19092 --create --if-not-exists --topic order.events --partitions 1 --replication-factor 1 &&
+            /opt/kafka/bin/kafka-topics.sh --bootstrap-server bizledger-kafka:19092 --create --if-not-exists --topic payment.events --partitions 1 --replication-factor 1 &&
+            /opt/kafka/bin/kafka-topics.sh --bootstrap-server bizledger-kafka:19092 --create --if-not-exists --topic audit.events --partitions 1 --replication-factor 1 &&
+            /opt/kafka/bin/kafka-topics.sh --bootstrap-server bizledger-kafka:19092 --create --if-not-exists --topic notification.events --partitions 1 --replication-factor 1 &&
+            /opt/kafka/bin/kafka-topics.sh --bootstrap-server bizledger-kafka:19092 --create --if-not-exists --topic reporting.events --partitions 1 --replication-factor 1 &&
+            /opt/kafka/bin/kafka-topics.sh --bootstrap-server bizledger-kafka:19092 --create --if-not-exists --topic dead-letter.events --partitions 1 --replication-factor 1 &&
+            
+            echo 'Kafka topics created successfully.'
+            "
+        networks:
+            - bizledger-net
+
+
+
+    zipkin:
+        image: openzipkin/zipkin:3
+        container_name: bizledger-zipkin
+        ports:
+            - "9411:9411"
+        networks:
+            - bizledger-net
+
+    prometheus:
+        image: prom/prometheus:v2.51.0
+        container_name: bizledger-prometheus
+        restart: unless-stopped
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - bizledger_prometheus_data:/prometheus
+        command:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus'
+            - '--web.enable-lifecycle'
+        ports:
+            - "9090:9090"
+        networks:
+            - bizledger-net
+
+    grafana:
+        image: grafana/grafana:10.4.0
+        container_name: bizledger-grafana
+        restart: unless-stopped
+        environment:
+            GF_SECURITY_ADMIN_USER: admin
+            GF_SECURITY_ADMIN_PASSWORD: admin
+            GF_SERVER_ROOT_URL: http://localhost:3000
+        volumes:
+            - bizledger_grafana_data:/var/lib/grafana
+        ports:
+            - "3000:3000"
+        depends_on:
+            - prometheus
+        networks:
+            - bizledger-net
+
+    elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+        container_name: bizledger-elasticsearch
+        restart: unless-stopped
+        environment:
+            - discovery.type=single-node
+            - xpack.security.enabled=true
+            - ELASTIC_PASSWORD=bizledger_password
+            - xpack.security.http.ssl.enabled=false
+            - ES_JAVA_OPTS=-Xms512m -Xmx512m
+        ports:
+            - "9200:9200"
+            - "9300:9300"
+        volumes:
+            - bizledger_es_data:/usr/share/elasticsearch/data
+        networks:
+            - bizledger-net
+        healthcheck:
+            test: ["CMD-SHELL", "curl -u elastic:bizledger_password -sf http://localhost:9200/_cluster/health || exit 1"]
+            interval: 20s
+            timeout: 10s
+            retries: 10
+
+    kibana:
+        image: docker.elastic.co/kibana/kibana:8.13.4
+        container_name: bizledger-kibana
+        restart: unless-stopped
+        environment:
+            - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+            - ELASTICSEARCH_USERNAME=elastic
+            - ELASTICSEARCH_PASSWORD=bizledger_password
+        ports:
+            - "5601:5601"
+        depends_on:
+            elasticsearch:
+                condition: service_healthy
+        networks:
+            - bizledger-net
+
+#    config-server:
+#        build:
+#            context: ../serivces/config-server
+#            dockerfile: Dockerfile
+#        container_name: bizledger-config-server
+#        ports:
+#            - "8888:8888"
+#        depends_on:
+#            service-registry:
+#                condition: service_healthy
+#        networks:
+#            - bizledger-net
+#    service-registry:
+#        build:
+#            context: ../serivces/service-registry
+#            dockerfile: Dockerfile
+#        container_name: bizledger-service-registry
+#        ports:
+#            - "8761:8761"
+#        networks:
+#            - bizledger-net
+#        healthcheck:
+#            test: [ "CMD-SHELL", "wget -q --spider http://localhost:8761/actuator/health || exit 1" ]
+#            interval: 10s
+#            timeout: 5s
+#            retries: 5
+#    identity-service:
+#        build:
+#            context: ../serivces/identity-service-java
+#            dockerfile: Dockerfile
+#        container_name: bizledger-identity-service
+#        restart: unless-stopped
+#        ports:
+#            - "8081:8081"
+#        environment:
+#            SPRING_PROFILES_ACTIVE: docker
+#            POSTGRES_USER: ${POSTGRES_USER}
+#            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#        depends_on:
+#            postgres:
+#                condition: service_healthy
+#            service-registry:
+#                condition: service_healthy
+#        networks:
+#            - bizledger-net
+#        healthcheck:
+#            test: ["CMD-SHELL", "wget -q --spider http://localhost:8081/actuator/health || exit 1"]
+#            interval: 15s
+#            timeout: 5s
+#            retries: 5
+#
+#    api-gateway:
+#        build:
+#            context: ../serivces/api-gateway-service
+#            dockerfile: Dockerfile
+#        container_name: bizledger-api-gateway
+#        restart: unless-stopped
+#        ports:
+#            - "8080:8080"
+#        environment:
+#            SPRING_PROFILES_ACTIVE: docker
+#        depends_on:
+#            service-registry:
+#                condition: service_healthy
+#            redis:
+#                condition: service_healthy
+#        networks:
+#            - bizledger-net
+#        healthcheck:
+#            test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/actuator/health || exit 1"]
+#            interval: 15s
+#            timeout: 5s
+#            retries: 5
+#
+#    catalog-service:
+#        build:
+#            context: ../serivces/catalog-service-java
+#            dockerfile: Dockerfile
+#        container_name: bizledger-catalog-service
+#        restart: unless-stopped
+#        ports:
+#            - "8082:8082"
+#        environment:
+#            SPRING_PROFILES_ACTIVE: docker
+#            POSTGRES_USER: ${POSTGRES_USER}
+#            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#        depends_on:
+#            postgres:
+#                condition: service_healthy
+#            kafka:
+#                condition: service_healthy
+#            elasticsearch:
+#                condition: service_healthy
+#        networks:
+#            - bizledger-net
+#        healthcheck:
+#            test: ["CMD-SHELL", "wget -q --spider http://localhost:8082/actuator/health || exit 1"]
+#            interval: 15s
+#            timeout: 5s
+#            retries: 5
+#
+#    inventory-service:
+#        build:
+#            context: ../serivces/inventory-service
+#            dockerfile: Dockerfile
+#        container_name: bizledger-inventory-service
+#        restart: unless-stopped
+#        ports:
+#            - "8083:8083"
+#        environment:
+#            SPRING_PROFILES_ACTIVE: docker
+#            POSTGRES_USER: ${POSTGRES_USER}
+#            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#        depends_on:
+#            postgres:
+#                condition: service_healthy
+#            kafka:
+#                condition: service_healthy
+#        networks:
+#            - bizledger-net
+#        healthcheck:
+#            test: ["CMD-SHELL", "wget -q --spider http://localhost:8083/actuator/health || exit 1"]
+#            interval: 15s
+#            timeout: 5s
+#            retries: 5
+#
+#    order-service:
+#        build:
+#            context: ../serivces/order-service-java
+#            dockerfile: Dockerfile
+#        container_name: bizledger-order-service
+#        restart: unless-stopped
+#        ports:
+#            - "8084:8084"
+#        environment:
+#            SPRING_PROFILES_ACTIVE: docker
+#            POSTGRES_USER: ${POSTGRES_USER}
+#            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#        depends_on:
+#            postgres:
+#                condition: service_healthy
+#            kafka:
+#                condition: service_healthy
+#        networks:
+#            - bizledger-net
+#        healthcheck:
+#            test: ["CMD-SHELL", "wget -q --spider http://localhost:8084/actuator/health || exit 1"]
+#            interval: 15s
+#            timeout: 5s
+#            retries: 5
+#
+#    payment-service:
+#        build:
+#            context: ../serivces/payment-service-java
+#            dockerfile: Dockerfile
+#        container_name: bizledger-payment-service
+#        restart: unless-stopped
+#        ports:
+#            - "8085:8085"
+#        environment:
+#            SPRING_PROFILES_ACTIVE: docker
+#            POSTGRES_USER: ${POSTGRES_USER}
+#            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#        depends_on:
+#            postgres:
+#                condition: service_healthy
+#            kafka:
+#                condition: service_healthy
+#        networks:
+#            - bizledger-net
+#        healthcheck:
+#            test: ["CMD-SHELL", "wget -q --spider http://localhost:8085/actuator/health || exit 1"]
+#            interval: 15s
+#            timeout: 5s
+#            retries: 5
+#
+#    audit-service:
+#        build:
+#            context: ../serivces/audit-service-java
+#            dockerfile: Dockerfile
+#        container_name: bizledger-audit-service
+#        restart: unless-stopped
+#        ports:
+#            - "8086:8086"
+#        environment:
+#            SPRING_PROFILES_ACTIVE: docker
+#            POSTGRES_USER: ${POSTGRES_USER}
+#            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#        depends_on:
+#            postgres:
+#                condition: service_healthy
+#            kafka:
+#                condition: service_healthy
+#            elasticsearch:
+#                condition: service_healthy
+#        networks:
+#            - bizledger-net
+#        healthcheck:
+#            test: ["CMD-SHELL", "wget -q --spider http://localhost:8086/actuator/health || exit 1"]
+#            interval: 15s
+#            timeout: 5s
+#            retries: 5
+#
+#    notification-service:
+#        build:
+#            context: ../serivces/notification-service-dotnet
+#            dockerfile: Dockerfile
+#        container_name: bizledger-notification-service
+#        restart: unless-stopped
+#        ports:
+#            - "5268:5268"
+#        environment:
+#            ASPNETCORE_ENVIRONMENT: Production
+#            ConnectionStrings__DefaultConnection: "Host=bizledger-postgres;Database=notification_db;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+#            Kafka__BootstrapServers: bizledger-kafka:19092
+#        depends_on:
+#            postgres:
+#                condition: service_healthy
+#            kafka:
+#                condition: service_healthy
+#        networks:
+#            - bizledger-net
+
+volumes:
+    bizledger_postgres_data:
+    bizledger_redis_data:
+    bizledger_kafka_data:
+    bizledger_prometheus_data:
+    bizledger_grafana_data:
+    bizledger_es_data:
+    bizledger_mongodb_data:
+
+networks:
+    bizledger-net:
+        name: bizledger-net
+        driver: bridge

@@ -1,0 +1,24 @@
+spring:
+    data:
+        mongodb:
+            uri: mongodb://bizledger:bizledger_password@localhost:27017/audit_db?authSource=admin
+            auto-index-creation: true
+    kafka:
+        bootstrap-servers: localhost:29092
+        consumer:
+            group-id: audit-group
+            auto-offset-reset: earliest
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+
+    # Elasticsearch — dual-write store for fast audit log search
+    elasticsearch:
+        uris: http://localhost:9200
+        username: elastic
+        password: bizledger_password
+        connection-timeout: 5s
+        socket-timeout: 30s

@@ -1,0 +1,11 @@
+# Docker-profile override — replaces localhost URIs with Docker service names
+spring:
+  datasource:
+    url: jdbc:postgresql://bizledger-postgres:5432/identity_db
+    username: ${POSTGRES_USER:bizledger}
+    password: ${POSTGRES_PASSWORD:bizledger_password}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://bizledger-service-registry:8761/eureka/

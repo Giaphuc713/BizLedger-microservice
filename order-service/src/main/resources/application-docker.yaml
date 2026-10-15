@@ -1,0 +1,15 @@
+# Docker-profile override — replaces localhost URIs with Docker service names
+spring:
+  config:
+    import: "optional:configserver:http://config-server:8888"
+  datasource:
+    url: jdbc:postgresql://bizledger-postgres:5432/order_db
+    username: ${POSTGRES_USER:bizledger}
+    password: ${POSTGRES_PASSWORD:bizledger_password}
+  kafka:
+    bootstrap-servers: bizledger-kafka:19092
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://bizledger-service-registry:8761/eureka/

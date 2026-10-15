@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    BizLedger — Structured JSON Logging Configuration (API Gateway)
+    ─────────────────────────────────────────────────────────────────
+    Every log line is emitted as a single JSON object containing:
+      - timestamp (ISO-8601)
+      - level
+      - service name
+      - traceId / spanId (injected by Micrometer Brave)
+      - userId / tenantId (injected via MDC in LoggingFilter)
+      - logger name
+      - message
+      - stack_trace (on error)
+
+    Why JSON logging?
+      → Easy to query in CloudWatch Logs Insights, Grafana Loki, ELK.
+      → One log = one structured record = grep-able by any field.
+      → No need for complex regex parsers.
+-->
+<configuration>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- ── Console Appender (JSON format) ── -->
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- Service identification -->
+            <customFields>{"service":"api-gateway-service","environment":"local"}</customFields>
+            <!-- Include MDC fields (traceId, userId, tenantId set by LoggingFilter) -->
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>spanId</includeMdcKeyName>
+            <includeMdcKeyName>userId</includeMdcKeyName>
+            <includeMdcKeyName>tenantId</includeMdcKeyName>
+            <!-- Shorten logger names for readability -->
+            <shortenedLoggerNameLength>36</shortenedLoggerNameLength>
+            <!-- Include stack trace as a JSON array field -->
+            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                <maxDepthPerCause>10</maxDepthPerCause>
+                <rootCauseFirst>true</rootCauseFirst>
+            </throwableConverter>
+        </encoder>
+    </appender>
+
+    <!-- Local Developer Console appender with ANSI coloring -->
+    <appender name="CONSOLE_COLOR" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(---){faint} %clr([%15.15t]){faint} %clr([%X{traceId:-}]){yellow} %clr([%X{userId:-}]){green} %clr([%X{tenantId:-}]){blue} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Local/Dev console output (friendly in IntelliJ) -->
+    <springProfile name="!docker">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_COLOR"/>
+        </root>
+    </springProfile>
+
+
+    <!-- Container JSON console output (ELK, logstash parseable) -->
+    <springProfile name="docker">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_JSON"/>
+        </root>
+    </springProfile>
+
+
+    <!-- Reduce noise from Eureka and Spring Cloud internals -->
+    <logger name="com.netflix.eureka" level="WARN"/>
+    <logger name="com.netflix.discovery" level="WARN"/>
+    <logger name="org.springframework.cloud.gateway" level="INFO"/>
+    <logger name="com.overcode250204" level="DEBUG"/>
+
+</configuration>

@@ -1,0 +1,19 @@
+# ─────────────────────────────────────────────────────────────────────────
+# BizLedger — API Gateway Service Configuration
+# Managed by Config Server (config-server:8888)
+# ─────────────────────────────────────────────────────────────────────────
+
+server:
+    port: 8080
+
+spring:
+    application:
+        name: api-gateway-service
+
+    config:
+        import: optional:configserver:http://localhost:8888
+
+jwt:
+    secret: c3VwZXItc2VjcmV0LWtleS1tdXN0LWJlLWF0LWxlYXN0LTI1Ni1iaXRzLWxvbmctZm9yLXNlY3VyaXR5
+cors:
+    url: http://localhost:5173

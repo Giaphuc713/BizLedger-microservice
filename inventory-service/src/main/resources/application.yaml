@@ -1,0 +1,16 @@
+server:
+    port: 8083
+spring:
+    application:
+        name: inventory-service
+    config:
+        import: "optional:configserver:http://localhost:8888"
+    cloud:
+        config:
+            fail-fast: false
+swagger:
+    title: "Inventory Service"
+    version: "1.0"
+    description: "Inventory Endpoints"
+    package: inventoryservice
+    gateway-url: http://localhost:8080

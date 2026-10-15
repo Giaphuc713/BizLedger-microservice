@@ -1,0 +1,35 @@
+server:
+    port: 8888
+
+spring:
+    application:
+        name: config-server
+    profiles:
+        active: native                              # native = read configs from local filesystem/classpath
+    cloud:
+        config:
+            server:
+                native:
+                    search-locations: classpath:/config-repo  # Config files stored in resources/config-repo/
+        bus:
+            enabled: true
+            destination: springCloudBus
+        stream:
+            kafka:
+                binder:
+                    brokers: localhost:29092
+    Kafka:
+        bootstrap-servers: localhost:29092
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,env,bus-refresh,bus-refresh,prometheus
+    endpoint:
+        health:
+            show-details: always
+
+
+logging:
+    level:
+        org.springframework.cloud.config: DEBUG
