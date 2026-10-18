@@ -4,6 +4,9 @@ server:
 spring:
     application:
         name: payment-service
+    flyway:
+        enabled: true
+        locations: classpath:migration/payment
     config:
         import: "optional:configserver:http://localhost:8888"
     cloud:

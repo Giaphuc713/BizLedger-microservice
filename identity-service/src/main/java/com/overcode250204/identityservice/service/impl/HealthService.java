@@ -55,7 +55,7 @@ public class HealthService implements IHealthService {
 
         // 4. Kafka check
         String kafkaHost = isDocker ? "bizledger-kafka" : "localhost";
-        int kafkaPort = isDocker ? 19092 : 9092;
+        int kafkaPort = isDocker ? 19092 : 29092;
         if (kafkaAdmin != null) {
             Object bootstrap = kafkaAdmin.getConfigurationProperties().get("bootstrap.servers");
             if (bootstrap != null) {

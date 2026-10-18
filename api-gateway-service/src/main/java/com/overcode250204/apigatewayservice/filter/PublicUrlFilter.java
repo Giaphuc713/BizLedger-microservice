@@ -15,7 +15,7 @@ public class PublicUrlFilter implements GlobalFilter, Ordered {
             "/swagger-resources",
             "/webjars",
             "/configuration",
-            "/identity-service/auth"
+            "/identity-service"
 
     );
 

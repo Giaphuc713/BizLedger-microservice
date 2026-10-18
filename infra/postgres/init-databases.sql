@@ -52,3 +52,6 @@ SELECT 'CREATE DATABASE job_db'
         FROM pg_database
         WHERE datname = 'job_db'
     ) \gexec
+
+ALTER USER bizledger WITH PASSWORD 'bizledger_password';
+\q

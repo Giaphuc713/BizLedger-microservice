@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package common;
+
+option java_package = "com.overcode250204.common.grpc";
+option java_multiple_files = true;
+option java_outer_classname = "ProductProto";
+
+service ProductGrpcService {
+  rpc GetProductInfo(ProductRequest) returns (ProductResponse);
+}
+
+message ProductRequest {
+  string tenant_id = 1;
+  string product_id = 2;
+}
+
+message ProductResponse {
+  bool active = 1;
+  double price = 2;
+  string sku = 3;
+  string name = 4;
+}

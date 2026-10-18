@@ -7,7 +7,7 @@ spring:
         username: ${POSTGRES_USER:bizledger}
         password: ${POSTGRES_PASSWORD:bizledger_password}
     kafka:
-        bootstrap-servers: bizledger-kafka:19092
+        bootstrap-servers: bizledger-kafka:29092
     elasticsearch:
         uris: http://bizledger-elasticsearch:9200
 

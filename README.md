@@ -149,19 +149,19 @@ mvn clean install -DskipTests
 ### 3. Start Java Services (in order)
 ```bash
 # Terminal 1: Service Registry
-cd serivces/service-registry && mvn spring-boot:run
+cd service-registry ; mvn spring-boot:run
 
 # Terminal 2: Config Server
-cd serivces/config-server && mvn spring-boot:run
+cd config-server ; mvn spring-boot:run
 
 # Terminal 3-9: Core Services (parallel)
-cd serivces/identity-service-java   && mvn spring-boot:run
-cd serivces/catalog-service-java    && mvn spring-boot:run
-cd serivces/inventory-service-java  && mvn spring-boot:run
-cd serivces/order-service-java      && mvn spring-boot:run
-cd serivces/payment-service-java    && mvn spring-boot:run
-cd serivces/audit-service-java      && mvn spring-boot:run
-cd serivces/api-gateway-service     && mvn spring-boot:run
+cd identity-service   ; mvn spring-boot:run
+cd catalog-service    ; mvn spring-boot:run
+cd inventory-service  ; mvn spring-boot:run
+cd order-service      ; mvn spring-boot:run
+cd payment-service    ; mvn spring-boot:run
+cd audit-service      ; mvn spring-boot:run
+cd api-gateway-service     ; mvn spring-boot:run
 ```
 
 ### 4. Start C# Notification Service
@@ -176,10 +176,10 @@ dotnet run
 
 ```bash
 # All Java services
-cd serivces/order-service-java && mvn test
+cd serivces/order-service-java ; mvn test
 
 # C# services
-cd serivces/notification-service-dotnet && dotnet test
+cd serivces/notification-service-dotnet ; dotnet test
 ```
 
 ---

@@ -97,7 +97,7 @@ public class AuthService implements IAuthService {
         for (String permissionCode : DEFAULT_OWNER_PERMISSIONS) {
             Permission permission = permissionRepository.findByCode(permissionCode)
                     .orElseGet(() -> permissionRepository.save(new Permission(UUID.randomUUID(), permissionCode, permissionCode)));
-            userRoleRepository.assignPermissionToRole(owner.getId(), permission.getId());
+            userRoleRepository.assignPermissionToRole(ownerRole.getId(), permission.getId());
         }
         userRoleRepository.assignRoleToUser(owner.getId(), ownerRole.getId());
 
