@@ -18,7 +18,7 @@ target/
 *.iws
 *.iml
 *.ipr
-
+Learning
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
@@ -45,3 +45,4 @@ build/
 bin/
 obj/
 target/
+docs/

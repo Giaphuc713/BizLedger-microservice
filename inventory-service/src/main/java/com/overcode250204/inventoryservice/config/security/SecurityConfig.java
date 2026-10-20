@@ -11,7 +11,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 import com.overcode250204.common.web.RequestLoggingFilter;
 import org.springframework.context.annotation.Import;
 
@@ -19,7 +18,7 @@ import org.springframework.context.annotation.Import;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
-@Import({ InternalGatewayAuthenticationFilter.class, RequestLoggingFilter.class })
+@Import({InternalGatewayAuthenticationFilter.class, RequestLoggingFilter.class})
 public class SecurityConfig {
 
     private final InternalGatewayAuthenticationFilter internalGatewayFilter;
@@ -31,10 +30,11 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/v3/api-docs", "/actuator/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(requestLoggingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(internalGatewayFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 }
+                 

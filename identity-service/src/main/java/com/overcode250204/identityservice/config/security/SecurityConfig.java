@@ -62,18 +62,18 @@ public class SecurityConfig {
                             response.setStatus(401);
                             response.setContentType("application/json");
                             response.getWriter().write("""
-                                                                        {
-                                                                          "success": false,
-                                                                          "message": "Unauthorized",
-                                                                          "data": null,
-                                                                          "error": {
-                                                                            "code": "UNAUTHORIZED",
-                                                                            "detail": "Authentication is required",
-                                                                            "validationErrors": null
-                                                                          },
-                                                                          "timestamp": "%s"
-                                                                        }
-                                                                        """.formatted(OffsetDateTime.now()));
+                                    {
+                                      "success": false,
+                                      "message": "Unauthorized",
+                                      "data": null,
+                                      "error": {
+                                        "code": "UNAUTHORIZED",
+                                        "detail": "Authentication is required",
+                                        "validationErrors": null
+                                      },
+                                      "timestamp": "%s"
+                                    }
+                                    """.formatted(OffsetDateTime.now()));
                         }))
                 .build();
     }

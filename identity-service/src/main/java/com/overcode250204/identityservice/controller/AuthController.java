@@ -3,7 +3,9 @@ package com.overcode250204.identityservice.controller;
 import com.overcode250204.common.web.ApiResponse;
 import com.overcode250204.identityservice.annotation.CurrentUser;
 import com.overcode250204.identityservice.dto.auth.AuthResponse;
+import com.overcode250204.identityservice.dto.auth.ForgotPasswordRequest;
 import com.overcode250204.identityservice.dto.auth.LoginRequest;
+import com.overcode250204.identityservice.dto.auth.RefreshTokenRequest;
 import com.overcode250204.identityservice.dto.auth.MeResponse;
 import com.overcode250204.identityservice.dto.auth.RegisterTenantRequest;
 import com.overcode250204.identityservice.entity.AuthenticatedUser;
@@ -34,5 +36,25 @@ public class AuthController {
     public ApiResponse<MeResponse> me(@CurrentUser AuthenticatedUser user) {
         return ApiResponse.success(authService.me(user));
     }
+
+    @PostMapping("/forgot-password")
+    public ApiResponse<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.email());
+        return ApiResponse.noContent("If the email exists, a password reset link has been sent.");
+    }
+
+    @PostMapping("/reset-password")
+    public ApiResponse<Void> resetPassword(
+            @RequestParam("token") String token,
+            @RequestParam("newPassword") String newPassword) {
+        authService.resetPassword(token, newPassword);
+        return ApiResponse.noContent("Password reset successfully.");
+    }
+
+    @PostMapping("/refresh-token")
+    public ApiResponse<AuthResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        return ApiResponse.success(authService.refreshToken(request.refreshToken()));
+    }
+
 
 }

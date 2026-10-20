@@ -47,9 +47,16 @@ public interface IAuthService {
      */
     AuthResponse login(LoginRequest request);
 
+    /** Starts a password reset and sends a short-lived token when the email exists. */
+    void forgotPassword(String email);
+
+    void resetPassword(String token, String newPassword);
+
     /**
      * Returns profile info for the currently authenticated user from the JWT
      * principal.
      */
     MeResponse me(AuthenticatedUser user);
+
+    AuthResponse refreshToken(String refreshToken);
 }

@@ -1,19 +1,15 @@
 package com.overcode250204.identityservice;
 
 import com.overcode250204.identityservice.dto.auth.AuthResponse;
+import com.overcode250204.identityservice.dto.auth.LoginRequest;
 import com.overcode250204.identityservice.dto.auth.RegisterTenantRequest;
-import com.overcode250204.identityservice.entity.Permission;
-import com.overcode250204.identityservice.entity.Role;
-import com.overcode250204.identityservice.entity.Tenant;
-import com.overcode250204.identityservice.entity.User;
-import com.overcode250204.identityservice.repository.PermissionRepository;
-import com.overcode250204.identityservice.repository.RoleRepository;
-import com.overcode250204.identityservice.repository.TenantRepository;
-import com.overcode250204.identityservice.repository.UserRepository;
-import com.overcode250204.identityservice.repository.UserRoleRepository;
+import com.overcode250204.identityservice.entity.*;
+
+import com.overcode250204.identityservice.repository.*;
 import com.overcode250204.identityservice.service.IJwtTokenService;
 import com.overcode250204.identityservice.service.IOutboxService;
 import com.overcode250204.identityservice.service.impl.AuthService;
+import com.overcode250204.identityservice.service.impl.RefreshTokenService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -50,6 +46,7 @@ class AuthenticationTest {
     @Mock private RoleRepository roleRepository;
     @Mock private PermissionRepository permissionRepository;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private RefreshTokenService refreshTokenService;
 
     @InjectMocks private AuthService authService;
 
@@ -61,6 +58,7 @@ class AuthenticationTest {
         when(tenantRepository.existsByCode("ACMESHOP")).thenReturn(false);
         when(userRepository.existsByEmail("owner@example.com")).thenReturn(false);
         when(passwordEncoder.encode("plain-pass")).thenReturn("encoded-pass");
+        when(refreshTokenService.createRefreshToken(any(User.class))).thenReturn("fake-refresh-token");
 
         for (String permissionCode : EXPECTED_PERMISSIONS) {
             Permission permission = new Permission(UUID.randomUUID(), permissionCode, permissionCode);
@@ -75,6 +73,36 @@ class AuthenticationTest {
         AuthResponse response = authService.registerTenant(request);
 
         assertEquals("fake-jwt", response.accessToken());
+        assertEquals("fake-refresh-token", response.refreshToken());
+        assertEquals("Bearer", response.tokenType());
+    }
+
+    @Test
+    void login_returnsAccessAndRefreshTokens_whenCredentialsAreValid() {
+        User user = new User(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                "user@example.com",
+                "encoded-password",
+                "Example User",
+                true,
+                java.time.OffsetDateTime.now());
+        List<String> roles = List.of("OWNER");
+        List<String> permissions = List.of("user.manage");
+
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("plain-password", "encoded-password")).thenReturn(true);
+        when(userRoleRepository.findRoleCodesByUserId(user.getId())).thenReturn(roles);
+        when(userRoleRepository.findPermissionCodesByUserId(user.getId())).thenReturn(permissions);
+        when(jwtTokenService.generateAccessToken(
+                user.getId(), user.getTenantId(), user.getEmail(), roles, permissions))
+                .thenReturn("access-token");
+        when(refreshTokenService.createRefreshToken(user)).thenReturn("refresh-token");
+
+        AuthResponse response = authService.login(new LoginRequest("user@example.com", "plain-password"));
+
+        assertEquals("access-token", response.accessToken());
+        assertEquals("refresh-token", response.refreshToken());
         assertEquals("Bearer", response.tokenType());
     }
 }

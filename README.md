@@ -155,6 +155,8 @@ cd service-registry ; mvn spring-boot:run
 cd config-server ; mvn spring-boot:run
 
 # Terminal 3-9: Core Services (parallel)
+# identity-service loads SMTP_HOST, SMTP_PORT (defaults to 587),
+# SMTP_USERNAME, and SMTP_PASSWORD from identity-service/.env.
 cd identity-service   ; mvn spring-boot:run
 cd catalog-service    ; mvn spring-boot:run
 cd inventory-service  ; mvn spring-boot:run

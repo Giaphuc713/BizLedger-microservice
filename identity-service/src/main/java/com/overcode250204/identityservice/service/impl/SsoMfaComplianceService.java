@@ -43,6 +43,7 @@ public class SsoMfaComplianceService implements ISsoMfaComplianceService {
     private final JwtTokenService jwtTokenService;
     private final CdcSubscriptionRepository cdcSubscriptionRepository;
     private final OutboxEventRepository outboxEventRepository;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     @Transactional
@@ -136,9 +137,11 @@ public class SsoMfaComplianceService implements ISsoMfaComplianceService {
 
         String accessToken = jwtTokenService.generateAccessToken(
                 user.getId(), user.getTenantId(), user.getEmail(), roles, permissions);
+        String refreshToken = refreshTokenService.createRefreshToken(user);
 
         return new AuthResponse(
                 accessToken,
+                refreshToken,
                 "Bearer",
                 user.getId(),
                 user.getTenantId(),

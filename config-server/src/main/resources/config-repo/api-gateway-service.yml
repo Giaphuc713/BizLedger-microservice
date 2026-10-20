@@ -231,252 +231,254 @@
 # ─────────────────────────────────────────────────────────────────────────
 
 server:
-    port: 8080
+  port: 8080
 
 spring:
-    application:
-        name: api-gateway-service
-    cloud:
-        gateway:
-            globalcors:
-                cors-configurations:
-                    '[/**]':
-                        allowedOrigins:
-                            - "http://localhost:5173"
-                        allowedMethods:
-                            - GET
-                            - POST
-                            - PUT
-                            - DELETE
-                            - OPTIONS
-                        allowedHeaders: "*"
-            routes:
-                # ── OpenAPI / Swagger Docs public routes ──
-                - id: identity-openapi
-                  uri: lb://identity-service
-                  predicates:
-                      - Path=/identity-service/v3/api-docs
-                  filters:
-                      - SetPath=/v3/api-docs
+  application:
+    name: api-gateway-service
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          "[/**]":
+            allowedOrigins:
+              - "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+      routes:
+        # ── OpenAPI / Swagger Docs public routes ──
+        - id: identity-openapi
+          uri: lb://identity-service
+          predicates:
+            - Path=/identity-service/v3/api-docs
+          filters:
+            - SetPath=/v3/api-docs
 
-                - id: catalog-openapi
-                  uri: lb://catalog-service
-                  predicates:
-                      - Path=/catalog-service/v3/api-docs
-                  filters:
-                      - SetPath=/v3/api-docs
+        - id: catalog-openapi
+          uri: lb://catalog-service
+          predicates:
+            - Path=/catalog-service/v3/api-docs
+          filters:
+            - SetPath=/v3/api-docs
 
-                - id: inventory-openapi
-                  uri: lb://inventory-service
-                  predicates:
-                      - Path=/inventory-service/v3/api-docs
-                  filters:
-                      - SetPath=/v3/api-docs
+        - id: inventory-openapi
+          uri: lb://inventory-service
+          predicates:
+            - Path=/inventory-service/v3/api-docs
+          filters:
+            - SetPath=/v3/api-docs
 
-                - id: order-openapi
-                  uri: lb://order-service
-                  predicates:
-                      - Path=/order-service/v3/api-docs
-                  filters:
-                      - SetPath=/v3/api-docs
+        - id: order-openapi
+          uri: lb://order-service
+          predicates:
+            - Path=/order-service/v3/api-docs
+          filters:
+            - SetPath=/v3/api-docs
 
-                - id: payment-openapi
-                  uri: lb://payment-service
-                  predicates:
-                      - Path=/payment-service/v3/api-docs
-                  filters:
-                      - SetPath=/v3/api-docs
+        - id: payment-openapi
+          uri: lb://payment-service
+          predicates:
+            - Path=/payment-service/v3/api-docs
+          filters:
+            - SetPath=/v3/api-docs
 
-                - id: audit-openapi
-                  uri: lb://audit-service
-                  predicates:
-                      - Path=/audit-service/v3/api-docs
-                  filters:
-                      - SetPath=/v3/api-docs
+        - id: audit-openapi
+          uri: lb://audit-service
+          predicates:
+            - Path=/audit-service/v3/api-docs
+          filters:
+            - SetPath=/v3/api-docs
 
-                # ── Public routes (no auth required) ──
-                - id: identity-auth-public
-                  uri: lb://identity-service
-                  predicates:
-                      - name: Path
-                        args:
-                            patterns:
-                                - /identity-service/api/v1/auth/register-tenant
-                                - /identity-service/api/v1/auth/login
-                                - /identity-service/api/v1/auth/refresh-token
-                                - /identity-service/api/v1/auth/sso/login
-                  filters:
-                      - StripPrefix=1
+        # ── Public routes (no auth required) ──
+        - id: identity-auth-public
+          uri: lb://identity-service
+          predicates:
+            - name: Path
+              args:
+                patterns:
+                  - /identity-service/api/v1/auth/register-tenant
+                  - /identity-service/api/v1/auth/login
+                  - /identity-service/api/v1/auth/forgot-password
+                  - /identity-service/api/v1/auth/reset-password
+                  - /identity-service/api/v1/auth/refresh-token
+                  - /identity-service/api/v1/auth/sso/login
+          filters:
+            - StripPrefix=1
 
-                # ── Protected routes ──
-                - id: identity-route
-                  uri: lb://identity-service
-                  predicates:
-                      - name: Path
-                        args:
-                            patterns:
-                                - /identity-service/api/v1/auth/**
-                                - /identity-service/api/v1/users/**
-                                - /identity-service/api/v1/roles/**
-                                - /identity-service/api/v1/mfa/**
-                                - /identity-service/api/v1/health/**
-                                - /identity-service/api/v1/api-keys/**
-                                - /identity-service/api/v1/feature-flags/**
-                                - /identity-service/api/v1/rate-limit/**
-                                - /identity-service/api/v1/compliance/**
-                  filters:
-                      - StripPrefix=1
-                      - AuthenticationFilter
+        # ── Protected routes ──
+        - id: identity-route
+          uri: lb://identity-service
+          predicates:
+            - name: Path
+              args:
+                patterns:
+                  - /identity-service/api/v1/auth/**
+                  - /identity-service/api/v1/users/**
+                  - /identity-service/api/v1/roles/**
+                  - /identity-service/api/v1/mfa/**
+                  - /identity-service/api/v1/health/**
+                  - /identity-service/api/v1/api-keys/**
+                  - /identity-service/api/v1/feature-flags/**
+                  - /identity-service/api/v1/rate-limit/**
+                  - /identity-service/api/v1/compliance/**
+          filters:
+            - StripPrefix=1
+            - AuthenticationFilter
 
-                - id: catalog-route
-                  uri: lb://catalog-service
-                  predicates:
-                      - name: Path
-                        args:
-                            patterns:
-                                - /catalog-service/api/v1/products/**
-                                - /catalog-service/api/v1/categories/**
-                  filters:
-                      - StripPrefix=1
-                      - AuthenticationFilter
+        - id: catalog-route
+          uri: lb://catalog-service
+          predicates:
+            - name: Path
+              args:
+                patterns:
+                  - /catalog-service/api/v1/products/**
+                  - /catalog-service/api/v1/categories/**
+          filters:
+            - StripPrefix=1
+            - AuthenticationFilter
 
-                - id: inventory-route
-                  uri: lb://inventory-service
-                  predicates:
-                      - Path=/inventory-service/api/v1/inventory/**
-                  filters:
-                      - StripPrefix=1
-                      - AuthenticationFilter
+        - id: inventory-route
+          uri: lb://inventory-service
+          predicates:
+            - Path=/inventory-service/api/v1/inventory/**
+          filters:
+            - StripPrefix=1
+            - AuthenticationFilter
 
-                - id: order-route
-                  uri: lb://order-service
-                  predicates:
-                      - Path=/order-service/api/v1/orders/**
-                  filters:
-                      - StripPrefix=1
-                      - AuthenticationFilter
+        - id: order-route
+          uri: lb://order-service
+          predicates:
+            - Path=/order-service/api/v1/orders/**
+          filters:
+            - StripPrefix=1
+            - AuthenticationFilter
 
-                - id: payment-route
-                  uri: lb://payment-service
-                  predicates:
-                      - name: Path
-                        args:
-                            patterns:
-                                - /payment-service/api/v1/payments/**
-                                - /payment-service/api/v1/invoices/**
-                  filters:
-                      - StripPrefix=1
-                      - AuthenticationFilter
+        - id: payment-route
+          uri: lb://payment-service
+          predicates:
+            - name: Path
+              args:
+                patterns:
+                  - /payment-service/api/v1/payments/**
+                  - /payment-service/api/v1/invoices/**
+          filters:
+            - StripPrefix=1
+            - AuthenticationFilter
 
-                - id: audit-route
-                  uri: lb://audit-service
-                  predicates:
-                      - Path=/audit-service/api/v1/audits/**
-                  filters:
-                      - StripPrefix=1
-                      - AuthenticationFilter
+        - id: audit-route
+          uri: lb://audit-service
+          predicates:
+            - Path=/audit-service/api/v1/audits/**
+          filters:
+            - StripPrefix=1
+            - AuthenticationFilter
 
-                - id: notification-route
-                  uri: lb://notification-service
-                  predicates:
-                      - name: Path
-                        args:
-                            patterns:
-                                - /notification-service/api/v1/notifications/**
-                                - /notification-service/hubs/**
-                  filters:
-                      - StripPrefix=1
+        - id: notification-route
+          uri: lb://notification-service
+          predicates:
+            - name: Path
+              args:
+                patterns:
+                  - /notification-service/api/v1/notifications/**
+                  - /notification-service/hubs/**
+          filters:
+            - StripPrefix=1
 
-                - id: reporting-route
-                  uri: lb://reporting-service
-                  predicates:
-                      - Path=/reporting-service/api/v1/reports/**
-                  filters:
-                      - StripPrefix=1
-                      - AuthenticationFilter
+        - id: reporting-route
+          uri: lb://reporting-service
+          predicates:
+            - Path=/reporting-service/api/v1/reports/**
+          filters:
+            - StripPrefix=1
+            - AuthenticationFilter
 
-                # ── ACTUATOR ROUTES ──
-                - id: identity-actuator-route
-                  uri: lb://identity-service
-                  predicates:
-                      - Path=/identity-service/actuator/**
-                  filters:
-                      - StripPrefix=1
+        # ── ACTUATOR ROUTES ──
+        - id: identity-actuator-route
+          uri: lb://identity-service
+          predicates:
+            - Path=/identity-service/actuator/**
+          filters:
+            - StripPrefix=1
 
-                - id: catalog-actuator-route
-                  uri: lb://catalog-service
-                  predicates:
-                      - Path=/catalog-service/actuator/**
-                  filters:
-                      - StripPrefix=1
+        - id: catalog-actuator-route
+          uri: lb://catalog-service
+          predicates:
+            - Path=/catalog-service/actuator/**
+          filters:
+            - StripPrefix=1
 
-                - id: inventory-actuator-route
-                  uri: lb://inventory-service
-                  predicates:
-                      - Path=/inventory-service/actuator/**
-                  filters:
-                      - StripPrefix=1
+        - id: inventory-actuator-route
+          uri: lb://inventory-service
+          predicates:
+            - Path=/inventory-service/actuator/**
+          filters:
+            - StripPrefix=1
 
-                - id: order-actuator-route
-                  uri: lb://order-service
-                  predicates:
-                      - Path=/order-service/actuator/**
-                  filters:
-                      - StripPrefix=1
+        - id: order-actuator-route
+          uri: lb://order-service
+          predicates:
+            - Path=/order-service/actuator/**
+          filters:
+            - StripPrefix=1
 
-                - id: payment-actuator-route
-                  uri: lb://payment-service
-                  predicates:
-                      - Path=/payment-service/actuator/**
-                  filters:
-                      - StripPrefix=1
+        - id: payment-actuator-route
+          uri: lb://payment-service
+          predicates:
+            - Path=/payment-service/actuator/**
+          filters:
+            - StripPrefix=1
 
-                - id: audit-actuator-route
-                  uri: lb://audit-service
-                  predicates:
-                      - Path=/audit-service/actuator/**
-                  filters:
-                      - StripPrefix=1
+        - id: audit-actuator-route
+          uri: lb://audit-service
+          predicates:
+            - Path=/audit-service/actuator/**
+          filters:
+            - StripPrefix=1
 
-                - id: notification-actuator-route
-                  uri: lb://notification-service
-                  predicates:
-                      - Path=/notification-service/actuator/**
-                  filters:
-                      - StripPrefix=1
+        - id: notification-actuator-route
+          uri: lb://notification-service
+          predicates:
+            - Path=/notification-service/actuator/**
+          filters:
+            - StripPrefix=1
 
-                - id: reporting-actuator-route
-                  uri: lb://reporting-service
-                  predicates:
-                      - Path=/reporting-service/actuator/**
-                  filters:
-                      - StripPrefix=1
+        - id: reporting-actuator-route
+          uri: lb://reporting-service
+          predicates:
+            - Path=/reporting-service/actuator/**
+          filters:
+            - StripPrefix=1
 
 jwt:
-    secret: c3VwZXItc2VjcmV0LWtleS1tdXN0LWJlLWF0LWxlYXN0LTI1Ni1iaXRzLWxvbmctZm9yLXNlY3VyaXR5
+  secret: c3VwZXItc2VjcmV0LWtleS1tdXN0LWJlLWF0LWxlYXN0LTI1Ni1iaXRzLWxvbmctZm9yLXNlY3VyaXR5
 
 springdoc:
-    show-actuator: true
-    api-docs:
-        enabled: true
-    swagger-ui:
-        enabled: true
-        path: /swagger-ui.html
-        urls:
-            - name: API Gateway (Actuator)
-              url: /v3/api-docs
-            - name: Identity Service
-              url: /identity-service/v3/api-docs
-            - name: Catalog Service
-              url: /catalog-service/v3/api-docs
-            - name: Inventory Service
-              url: /inventory-service/v3/api-docs
-            - name: Order Service
-              url: /order-service/v3/api-docs
-            - name: Payment Service
-              url: /payment-service/v3/api-docs
-            - name: Audit Service
-              url: /audit-service/v3/api-docs
+  show-actuator: true
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: API Gateway (Actuator)
+        url: /v3/api-docs
+      - name: Identity Service
+        url: /identity-service/v3/api-docs
+      - name: Catalog Service
+        url: /catalog-service/v3/api-docs
+      - name: Inventory Service
+        url: /inventory-service/v3/api-docs
+      - name: Order Service
+        url: /order-service/v3/api-docs
+      - name: Payment Service
+        url: /payment-service/v3/api-docs
+      - name: Audit Service
+        url: /audit-service/v3/api-docs
 
 cors:
-    url: http://localhost:5173
+  url: http://localhost:5173
