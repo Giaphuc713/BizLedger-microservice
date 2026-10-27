@@ -268,6 +268,11 @@ public class AuthService implements IAuthService {
         resetPasswordRepository.save(forgotPassword);
     }
 
+    private void logOutUser(User user) {
+        // Revoke all refresh tokens for the user
+        refreshTokenService.revokeAllForUser(user);
+    }
+
     private String normalizeCode(String code) {
         return code.trim().toUpperCase(java.util.Locale.ROOT);
     }

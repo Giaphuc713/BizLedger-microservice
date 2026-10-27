@@ -8,6 +8,7 @@ import com.overcode250204.identityservice.dto.auth.LoginRequest;
 import com.overcode250204.identityservice.dto.auth.RefreshTokenRequest;
 import com.overcode250204.identityservice.dto.auth.MeResponse;
 import com.overcode250204.identityservice.dto.auth.RegisterTenantRequest;
+import com.overcode250204.identityservice.dto.auth.ResetPasswordRequest;
 import com.overcode250204.identityservice.entity.AuthenticatedUser;
 import com.overcode250204.identityservice.service.IAuthService;
 import jakarta.validation.Valid;
@@ -45,9 +46,9 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public ApiResponse<Void> resetPassword(
-            @RequestParam("token") String token,
-            @RequestParam("newPassword") String newPassword) {
-        authService.resetPassword(token, newPassword);
+            @Valid @RequestBody ResetPasswordRequest request
+    ) {
+        authService.resetPassword(request.token(), request.newPassword());
         return ApiResponse.noContent("Password reset successfully.");
     }
 
@@ -56,5 +57,10 @@ public class AuthController {
         return ApiResponse.success(authService.refreshToken(request.refreshToken()));
     }
 
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(User user) {
+        authService.logout(user);
+        return ApiResponse.noContent("Logged out successfully.");
+    }
 
 }
