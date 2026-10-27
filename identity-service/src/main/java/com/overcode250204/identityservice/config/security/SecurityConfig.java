@@ -36,7 +36,6 @@ public class SecurityConfig {
             "/configuration/**",
             "/actuator/health",
             "/actuator/info",
-            "/api/v1/auth/**",
             "/api/v1/health/**"
     };
 
@@ -50,9 +49,15 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PATH).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/register-tenant")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/register-tenant",
+                                "/api/v1/auth/forgot-password",
+                                "/api/v1/auth/reset-password",
+                                "/api/v1/auth/refresh-token",
+                                "/api/v1/auth/logout",
+                                "/api/v1/auth/sso/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/sso/providers").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

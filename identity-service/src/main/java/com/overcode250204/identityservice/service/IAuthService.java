@@ -5,6 +5,7 @@ import com.overcode250204.identityservice.dto.auth.LoginRequest;
 import com.overcode250204.identityservice.dto.auth.MeResponse;
 import com.overcode250204.identityservice.dto.auth.RegisterTenantRequest;
 import com.overcode250204.identityservice.entity.AuthenticatedUser;
+import com.overcode250204.identityservice.entity.User;
 
 /**
  * IAuthService — contract for authentication and tenant registration.
@@ -59,4 +60,6 @@ public interface IAuthService {
     MeResponse me(AuthenticatedUser user);
 
     AuthResponse refreshToken(String refreshToken);
+
+    void logout(String refreshToken);
 }

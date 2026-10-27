@@ -95,4 +95,9 @@ public class RefreshTokenService {
         refreshTokenRepository.deleteAllByUser(user);
     }
 
+    @Transactional
+    public void revoke(String rawToken) {
+        refreshTokenRepository.deleteByTokenHash(sha256(rawToken));
+    }
+
 }

@@ -268,9 +268,10 @@ public class AuthService implements IAuthService {
         resetPasswordRepository.save(forgotPassword);
     }
 
-    private void logOutUser(User user) {
-        // Revoke all refresh tokens for the user
-        refreshTokenService.revokeAllForUser(user);
+    @Override
+    @Transactional
+    public void logout(String refreshToken) {
+        refreshTokenService.revoke(refreshToken);
     }
 
     private String normalizeCode(String code) {

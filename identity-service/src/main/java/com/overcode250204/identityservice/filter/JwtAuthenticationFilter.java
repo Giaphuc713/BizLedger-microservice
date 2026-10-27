@@ -22,15 +22,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenService jwtTokenService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
 
         String path = request.getRequestURI();
 
-        if (path.endsWith("/login")
-                || isPublicPath(path)
-        ) {
+        if (isPublicPath(path)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -39,7 +38,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
 
 
         String token = authorization.substring("Bearer ".length());
@@ -67,10 +65,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
     private boolean isPublicPath(String path) {
         return path.startsWith("/swagger-ui")
                 || path.contains("/v3/api-docs")
                 || path.startsWith("/swagger-resources")
-                || path.startsWith("/webjars") || path.startsWith("/api/v1/auth");
+                || path.startsWith("/webjars")
+                || path.equals("/api/v1/auth/login")
+                || path.equals("/api/v1/auth/register-tenant")
+                || path.equals("/api/v1/auth/forgot-password")
+                || path.equals("/api/v1/auth/reset-password")
+                || path.equals("/api/v1/auth/refresh-token")
+                || path.equals("/api/v1/auth/logout")
+                || path.equals("/api/v1/auth/sso/login")
+                || path.equals("/api/v1/auth/sso/providers");
     }
 }
