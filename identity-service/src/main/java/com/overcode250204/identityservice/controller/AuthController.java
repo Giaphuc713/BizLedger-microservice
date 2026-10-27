@@ -9,11 +9,12 @@ import com.overcode250204.identityservice.dto.auth.RefreshTokenRequest;
 import com.overcode250204.identityservice.dto.auth.MeResponse;
 import com.overcode250204.identityservice.dto.auth.RegisterTenantRequest;
 import com.overcode250204.identityservice.dto.auth.ResetPasswordRequest;
-import com.overcode250204.identityservice.entity.AuthenticatedUser;
 import com.overcode250204.identityservice.service.IAuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -34,7 +35,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ApiResponse<MeResponse> me(@CurrentUser AuthenticatedUser user) {
+    public ApiResponse<MeResponse> me(UUID user) {
         return ApiResponse.success(authService.me(user));
     }
 

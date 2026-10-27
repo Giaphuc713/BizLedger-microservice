@@ -7,6 +7,8 @@ import com.overcode250204.identityservice.dto.auth.RegisterTenantRequest;
 import com.overcode250204.identityservice.entity.AuthenticatedUser;
 import com.overcode250204.identityservice.entity.User;
 
+import java.util.UUID;
+
 /**
  * IAuthService — contract for authentication and tenant registration.
  */
@@ -57,7 +59,7 @@ public interface IAuthService {
      * Returns profile info for the currently authenticated user from the JWT
      * principal.
      */
-    MeResponse me(AuthenticatedUser user);
+    MeResponse me(UUID user);
 
     AuthResponse refreshToken(String refreshToken);
 

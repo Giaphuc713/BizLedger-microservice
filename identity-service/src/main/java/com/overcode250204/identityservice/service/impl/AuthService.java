@@ -200,8 +200,14 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public MeResponse me(AuthenticatedUser user) {
-        return new MeResponse(user.userId(), user.tenantId(), user.email(), user.roles(), user.permissions());
+    public MeResponse me(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        List<String> roles = userRoleRepository.findRoleCodesByUserId(user.getId());
+        List<String> permissions = userRoleRepository.findPermissionCodesByUserId(user.getId());
+
+        return new MeResponse(user.getId(), user.getTenantId(), user.getEmail(), roles, permissions);
     }
 
 
