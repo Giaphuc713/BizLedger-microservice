@@ -37,5 +37,5 @@ spring:
 grpc:
     client:
         catalog:
-            address: 'static://localhost:9090'
+            address: 'static://localhost:9091'
             negotiationType: plaintext

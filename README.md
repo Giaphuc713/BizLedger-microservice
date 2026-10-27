@@ -43,25 +43,17 @@
 
 ## 🔌 Giao tiếp giữa các service: gRPC, Kafka và Eureka
 
-### gRPC đang được gọi ở đâu?
+### gRPC trong luồng Order-Catalog
 
-Trong source hiện tại, **Order Service là gRPC client** và gọi Catalog Service
-để lấy thông tin sản phẩm khi tạo order:
+Contract gRPC giữa Order Service và Catalog Service đã có để học/tích hợp sau.
+Hiện tại API tạo order chưa gọi Catalog: `OrderService.createOrder(...)` tạo
+đơn nháp trực tiếp từ thông tin item trong request. Vì client có thể tự gửi
+SKU, tên và giá, không dùng luồng này cho giao dịch thật nếu chưa xác minh lại
+sản phẩm/giá ở Catalog.
 
 - Contract được định nghĩa trong `common/src/main/proto/product.proto` với RPC
   `ProductGrpcService.GetProductInfo`.
-- Client stub được inject trong `order-service` bằng `@GrpcClient("catalog")`.
-- `OrderService.createOrder(...)` gửi `tenantId` và `productId`, sau đó dùng
-  thông tin sản phẩm và giá trả về để tạo order.
-- Client đang được cấu hình kết nối tới `localhost:9090` trong cấu hình
-  `order-service`.
-
-Catalog Service có dependency gRPC server, nhưng source hiện tại chưa có
-implementation handler `ProductGrpcService` (ví dụ class được đánh dấu
-`@GrpcService`). Vì vậy client/contract đã có, nhưng cần bổ sung và chạy server
-handler ở Catalog Service để luồng gRPC hoạt động end-to-end. Lưu ý port `9090`
-cũng đang được dùng để truy cập Prometheus trên host; cần chọn port gRPC riêng
-để tránh xung đột khi chạy cả hai trên cùng máy.
+- Cấu hình client/server gRPC hiện được giữ lại để học và tích hợp sau.
 
 ### gRPC dùng để làm gì?
 
@@ -86,8 +78,8 @@ Có. Chọn phương thức theo loại tương tác:
 | WebSocket/SignalR       | Hai chiều, thời gian thực | Push thông báo tới client đang kết nối                                 |
 
 Trong repository này, Saga sử dụng Kafka cho event giữa Order, Inventory và
-Payment; Order gọi Catalog qua gRPC khi cần thông tin đồng bộ. API Gateway dùng
-HTTP để nhận request client và định tuyến tới các API service. Không nên để một
+Payment; contract gRPC Order-Catalog được giữ lại để tích hợp sau. API Gateway
+dùng HTTP để nhận request client và định tuyến tới các API service. Không nên để một
 service truy cập trực tiếp database của service khác; hãy gọi API/RPC do service
 đó cung cấp hoặc trao đổi event.
 
@@ -199,6 +191,43 @@ User → POST /api/v1/orders/submit
 | Grafana           | 3000 | `http://localhost:3000` (admin/admin)              |
 | PostgreSQL        | 5432 | —                                                  |
 | Redis             | 6379 | —                                                  |
+### Test Order API
+
+Đăng nhập bằng tài khoản có quyền `order:write`, sau đó dùng access token gọi
+API qua Gateway. Ví dụ login:
+
+```http
+POST http://localhost:8080/identity-service/api/v1/auth/login
+Content-Type: application/json
+
+{"email":"<email>","password":"<password>"}
+```
+
+Dữ liệu item dưới đây được Order Service lấy trực tiếp từ request; tạo draft
+không kiểm tra product có tồn tại trong Catalog hay không.
+
+```http
+POST http://localhost:8080/order-service/api/v1/orders
+Authorization: Bearer <access-token>
+Content-Type: application/json
+
+{
+  "customerId": "d3b07384-d113-4c92-a1b6-d3aef6d93001",
+  "items": [
+    {
+      "productId": "d3b07384-d113-4c92-a1b6-d3aef6d91011",
+      "sku": "TEST-ORDER-001",
+      "name": "Test Order Product",
+      "quantity": 1,
+      "unitPrice": 0
+    }
+  ]
+}
+```
+
+Creating an order saves it as `DRAFT`. Submit it with
+`POST /order-service/api/v1/orders/{orderId}/submit` to start the asynchronous
+inventory/payment Saga.
 
 ---
 

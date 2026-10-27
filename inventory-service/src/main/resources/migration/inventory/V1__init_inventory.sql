@@ -3,7 +3,7 @@
 -- V1__init_inventory.sql
 -- =============================================================
 
-CREATE TABLE inventory_item (
+CREATE TABLE IF NOT EXISTS inventory_item (
                                 id             UUID PRIMARY KEY,
                                 tenant_id      UUID NOT NULL,
                                 product_id     UUID NOT NULL,
@@ -16,11 +16,11 @@ CREATE TABLE inventory_item (
                                 UNIQUE(tenant_id, product_id)
 );
 
-CREATE INDEX idx_inventory_tenant ON inventory_item(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_tenant ON inventory_item(tenant_id);
 
 -- =============================================================
 
-CREATE TABLE stock_movement (
+CREATE TABLE IF NOT EXISTS stock_movement (
                                 id             UUID PRIMARY KEY,
                                 tenant_id      UUID NOT NULL,
                                 product_id     UUID NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE stock_movement (
 
 -- =============================================================
 
-CREATE TABLE stock_reservation (
+CREATE TABLE IF NOT EXISTS stock_reservation (
                                    id             UUID PRIMARY KEY,
                                    tenant_id      UUID NOT NULL,
                                    order_id       UUID NOT NULL,
@@ -43,12 +43,12 @@ CREATE TABLE stock_reservation (
                                    updated_at     TIMESTAMPTZ
 );
 
-CREATE UNIQUE INDEX idx_reserved_order_prod ON stock_reservation(order_id, product_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reserved_order_prod ON stock_reservation(order_id, product_id);
 
 -- =============================================================
 -- Outbox Pattern
 -- =============================================================
-CREATE TABLE outbox_event (
+CREATE TABLE IF NOT EXISTS outbox_event (
                               id           UUID PRIMARY KEY,
                               event_id     VARCHAR(100) NOT NULL UNIQUE,
                               event_type   VARCHAR(100) NOT NULL,
@@ -60,16 +60,16 @@ CREATE TABLE outbox_event (
                               published_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_inv_outbox_status ON outbox_event(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_inv_outbox_status ON outbox_event(status, created_at);
 
 -- =============================================================
 -- Inbox Pattern
 -- =============================================================
-CREATE TABLE inbox_event (
+CREATE TABLE IF NOT EXISTS inbox_event (
                              id           BIGSERIAL PRIMARY KEY,
                              event_id     VARCHAR(100) NOT NULL UNIQUE,
                              event_type   VARCHAR(100) NOT NULL,
                              processed_at TIMESTAMPTZ NOT NULL
 );
 
-CREATE INDEX idx_inv_inbox_event_id ON inbox_event(event_id);
+CREATE INDEX IF NOT EXISTS idx_inv_inbox_event_id ON inbox_event(event_id);

@@ -20,7 +20,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import net.devh.boot.grpc.client.inject.GrpcClient;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -37,9 +36,6 @@ public class OrderService implements IOrderService {
     private final OrderRepository orderRepository;
     private final OrderStatusHistoryRepository historyRepository;
     private final OutboxHelper outboxHelper;
-
-    @GrpcClient("catalog")
-    private com.overcode250204.common.grpc.ProductGrpcServiceGrpc.ProductGrpcServiceBlockingStub productGrpcServiceStub;
 
     @Override
     @Transactional(readOnly = true)
@@ -68,37 +64,20 @@ public class OrderService implements IOrderService {
                 .build();
 
         for (OrderItemDto itemDto : request.items()) {
-            log.info("gRPC Call - Fetching catalog price for product: {}", itemDto.productId());
-            com.overcode250204.common.grpc.ProductResponse grpcProductResponse = productGrpcServiceStub
-                    .getProductInfo(
-                            com.overcode250204.common.grpc.ProductRequest.newBuilder()
-                                    .setTenantId(tenantId.toString())
-                                    .setProductId(itemDto.productId().toString())
-                                    .build());
-
-            if (!grpcProductResponse.getActive()) {
-                throw new RuntimeException(
-                        "Product is inactive or unavailable: " + itemDto.productId());
-            }
-
-            BigDecimal verifiedPrice = BigDecimal.valueOf(grpcProductResponse.getPrice());
-            log.info("gRPC Verified - Product: {}, Price: {}", grpcProductResponse.getName(),
-                    verifiedPrice);
-
             order.addItem(OrderItem.builder()
                     .productId(itemDto.productId())
-                    .sku(grpcProductResponse.getSku())
-                    .name(grpcProductResponse.getName())
+                    .sku(itemDto.sku())
+                    .name(itemDto.name())
                     .quantity(itemDto.quantity())
-                    .unitPrice(verifiedPrice)
+                    .unitPrice(itemDto.unitPrice())
                     .build());
 
-            total = total.add(verifiedPrice.multiply(BigDecimal.valueOf(itemDto.quantity())));
+            total = total.add(itemDto.unitPrice().multiply(BigDecimal.valueOf(itemDto.quantity())));
         }
 
         order.setTotalAmount(total);
         Order saved = orderRepository.save(order);
-        recordHistory(saved.getId(), null, "DRAFT", "Order created as draft (verified via gRPC)");
+        recordHistory(saved.getId(), null, "DRAFT", "Order created as draft from request data");
         return mapToResponse(saved);
     }
 
