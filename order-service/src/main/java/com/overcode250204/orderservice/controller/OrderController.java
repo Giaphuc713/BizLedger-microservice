@@ -40,7 +40,7 @@ public class OrderController {
     }
 
     @PostMapping
-    // @PreAuthorize("hasAuthority('order:write')")
+    @PreAuthorize("hasAuthority('order:write')")
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
             @RequestHeader("X-Tenant-Id") UUID tenantId,
             @Valid @RequestBody CreateOrderRequest request) {
